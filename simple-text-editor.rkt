@@ -4,7 +4,8 @@
 (require 2htdp/image)
 (require 2htdp/universe)
 
-;; A text editor, we can type text, backspace to delete text, left & right to move, and insert text in any position
+;; A simple text editor that can display input text, 
+;; use backspace to delete text, left & right to move, and insert text in any position
 
 ;; =================
 ;; Constants:
@@ -13,8 +14,12 @@
 
 (define CTR-Y (/ HEIGHT 2))
 
+(define CHAR-WIDTH 5) ;hard-coded character width for drawing the cursor in appropriate postion
+
 (define TEXT-SIZE 24)
 (define TEXT-COLOR "black")
+
+(define CURSOR (line 0 HEIGHT "red"))
 
 
 (define MTS (empty-scene WIDTH HEIGHT))
@@ -26,11 +31,10 @@
 (define-struct ts (s c))
 ;; TextState is (make-ts String Natural)
 ;; interp. the statue of input text 
-;; s is the string typed
-;; c is the cursor's position (x-coordinate) [0, (string-length s)]
-(define T1 (make-ts "hello" (string-length "hello")))
-(define T2 (make-ts "you can do this" 5))
-
+;; s is the input string
+;; c is the cursor's position (x-coordinate) [0, (string-length s)],it indicates the next string insertion position as well
+(define T1 (make-ts "hello" 5))
+(define T2 (make-ts "you can do this" 3))
 #;
 (define (fn-for-text-state ts)
   (... (ts-s ts)
@@ -44,7 +48,7 @@
 ;; Functions:
 
 ;; TextState -> TextState
-;; run the text editor, stirng with initial text state ts
+;; run the text editor, starting with initial text state ts (empty string and cursor x-postion 0)
 ;; start the world with (main (make-ts "" 0))
 ;; 
 (define (main ts)
@@ -55,26 +59,41 @@
 
 
 ;; TextState -> Image
-;; produce the ts at height CTR-Y on the MTS
-(check-expect (render-text (make-ts "hello" 5)) (place-image (text "hello" TEXT-SIZE TEXT-COLOR) 
-                                                           (/ (image-width (text "hello" TEXT-SIZE TEXT-COLOR)) 2) 
-                                                           CTR-Y 
-                                                           MTS))
+;; Display the text at height of CTR-Y on the MTS with a cursor
+(check-expect (render-text (make-ts "hello" 5)) (place-image 
+                                                 (overlay/offset
+                                                  CURSOR
+                                                  (- (* 5 CHAR-WIDTH)) 0
+                                                  (text "hello" TEXT-SIZE TEXT-COLOR)) 
+                                                 (/ (image-width (text "hello" TEXT-SIZE TEXT-COLOR)) 2) 
+                                                 CTR-Y 
+                                                 MTS))
+(check-expect (render-text (make-ts "hello" 3)) (place-image 
+                                                 (overlay/offset
+                                                  CURSOR
+                                                  (- (* 3 CHAR-WIDTH)) 0
+                                                  (text "hello" TEXT-SIZE TEXT-COLOR)) 
+                                                 (/ (image-width (text "hello" TEXT-SIZE TEXT-COLOR)) 2) 
+                                                 CTR-Y 
+                                                 MTS))
 
 ;(define (render-text ts) MTS) ;stub
 
 ; Template from TextState
 (define (render-text ts)
   (place-image 
-   (text (ts-s ts) TEXT-SIZE TEXT-COLOR)
+   (overlay/offset
+    CURSOR
+    (- (* (ts-c ts) CHAR-WIDTH)) 0
+    (text (ts-s ts) TEXT-SIZE TEXT-COLOR))
    (/ (image-width (text (ts-s ts) TEXT-SIZE TEXT-COLOR)) 2) 
    CTR-Y
    MTS))
 
 
-
 ;; TextState KeyEvent -> TextState
-;; add input characters to the text displaying
+;; insert input character to the string displayed on scene 
+;; change cursor's x-position to next string insertion postion
 (check-expect (handle-key (make-ts "hello" 5) "a") (make-ts "helloa" 6))
 (check-expect (handle-key (make-ts "hello" 3) "a") (make-ts "helalo" 4))
 
