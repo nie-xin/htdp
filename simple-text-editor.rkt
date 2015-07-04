@@ -14,8 +14,6 @@
 
 (define CTR-Y (/ HEIGHT 2))
 
-(define CHAR-WIDTH 5) ;hard-coded character width for drawing the cursor in appropriate postion
-
 (define TEXT-SIZE 24)
 (define TEXT-COLOR "black")
 
@@ -63,7 +61,7 @@
 (check-expect (render-text (make-ts "hello" 5)) (place-image 
                                                  (overlay/offset
                                                   CURSOR
-                                                  (- (* 5 CHAR-WIDTH)) 0
+                                                  (- (/ (image-width (text "hello" TEXT-SIZE TEXT-COLOR)) 2)) 0
                                                   (text "hello" TEXT-SIZE TEXT-COLOR)) 
                                                  (/ (image-width (text "hello" TEXT-SIZE TEXT-COLOR)) 2) 
                                                  CTR-Y 
@@ -71,7 +69,7 @@
 (check-expect (render-text (make-ts "hello" 3)) (place-image 
                                                  (overlay/offset
                                                   CURSOR
-                                                  (- (* 3 CHAR-WIDTH)) 0
+                                                  (- (/ (image-width (text "hel" TEXT-SIZE TEXT-COLOR)) 2)) 0
                                                   (text "hello" TEXT-SIZE TEXT-COLOR)) 
                                                  (/ (image-width (text "hello" TEXT-SIZE TEXT-COLOR)) 2) 
                                                  CTR-Y 
@@ -84,7 +82,7 @@
   (place-image 
    (overlay/offset
     CURSOR
-    (- (* (ts-c ts) CHAR-WIDTH)) 0
+    (- (/ (image-width (text (substring (ts-s ts) 0 (ts-c ts)) TEXT-SIZE TEXT-COLOR)) 2)) 0
     (text (ts-s ts) TEXT-SIZE TEXT-COLOR))
    (/ (image-width (text (ts-s ts) TEXT-SIZE TEXT-COLOR)) 2) 
    CTR-Y
