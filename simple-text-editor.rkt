@@ -23,20 +23,21 @@
 ;; =================
 ;; Data definitions:
 
-(define-struct ts (s))
-;; TextState is (make-ts String Number)
+(define-struct ts (s c))
+;; TextState is (make-ts String Natural)
 ;; interp. the statue of input text 
 ;; s is the string typed
-;; c is the cursor's position (x-coordinate)
-(define T1 (make-ts "hello"))
-(define T2 (make-ts "you can do this"))
+;; c is the cursor's position (x-coordinate) [0, (string-length s)]
+(define T1 (make-ts "hello" (string-length "hello")))
+(define T2 (make-ts "you can do this" 5))
 
 #;
 (define (fn-for-text-state ts)
-  (... (ts-s ts)))
+  (... (ts-s ts)
+       (ts-c ts)))
 
 ;; Template rules used:
-;; - compound: 1 fields
+;; - compound: 2 fields
 
 
 ;; =================
@@ -55,7 +56,7 @@
 
 ;; TextState -> Image
 ;; produce the ts at height CTR-Y on the MTS
-(check-expect (render-text (make-ts "hello")) (place-image (text "hello" TEXT-SIZE TEXT-COLOR) 
+(check-expect (render-text (make-ts "hello" 5)) (place-image (text "hello" TEXT-SIZE TEXT-COLOR) 
                                                            (/ (image-width (text "hello" TEXT-SIZE TEXT-COLOR)) 2) 
                                                            CTR-Y 
                                                            MTS))
@@ -74,9 +75,18 @@
 
 ;; TextState KeyEvent -> TextState
 ;; add input characters to the text displaying
-(check-expect (handle-key (make-ts "hello") "a") (make-ts "helloa"))
-(check-expect (handle-key (make-ts "hello") "\b") (make-ts "hell"))
-(check-expect (handle-key (make-ts "") "\b") (make-ts ""))
+(check-expect (handle-key (make-ts "hello" 5) "a") (make-ts "helloa" 6))
+(check-expect (handle-key (make-ts "hello" 3) "a") (make-ts "helalo" 4))
+
+
+(check-expect (handle-key (make-ts "hello" 5) "\b") (make-ts "hell" 4))
+
+(check-expect (handle-key (make-ts "" 0) "\b") (make-ts "" 0))
+
+(check-expect (handle-key (make-ts "hello" 5) "left") (make-ts "hello" 4))
+(check-expect (handle-key (make-ts "" 0) "left") (make-ts "" 0))
+(check-expect (handle-key (make-ts "hello" 4) "right") (make-ts "hello" 5))
+(check-expect (handle-key (make-ts "hello" 5) "right") (make-ts "hello" 5))
 
 ;(define (handle-key ts key) ts) ;stub
 
@@ -84,7 +94,19 @@
 (define (handle-key ts key)
   (cond [(key=? "\b" key) 
          (if (> (string-length (ts-s ts)) 0)
-             (make-ts (substring (ts-s ts) 0 (- (string-length (ts-s ts)) 1)))
-             ts]
+             (make-ts (substring (ts-s ts) 0 (- (string-length (ts-s ts)) 1)) (- (ts-c ts) 1))
+             ts)]
+        [(key=? "left" key)
+         (if (> (ts-c ts) 0)
+             (make-ts (ts-s ts) (- (ts-c ts) 1))
+             ts)]
+        [(key=? "right" key)
+         (if (< (ts-c ts) (string-length (ts-s ts)))
+             (make-ts (ts-s ts) (+ (ts-c ts) 1))
+             ts)]
         [else 
-         (make-ts (string-append (ts-s ts) key))]))
+         (make-ts (string-append 
+                   (substring (ts-s ts) 0 (ts-c ts)) 
+                   key
+                   (substring (ts-s ts) (ts-c ts) (string-length (ts-s ts)))) 
+                  (+ (ts-c ts) 1))]))
